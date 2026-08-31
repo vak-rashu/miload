@@ -47,13 +47,12 @@ func main() {
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-var v = pointer{i: 0}
+var I = &pointer{i: 0}
 
 func callBackendHandler(w http.ResponseWriter, r *http.Request) {
-	server := v.roundRobin(serverSlice)
 
 	sendMsg := msg{}
-	backendMsg, err := callBackend(server)
+	backendMsg, err := callBackend()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusExpectationFailed)
 	}
@@ -62,7 +61,8 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sendMsg.M)
 }
 
-func callBackend(server string) ([]byte, error) {
+func callBackend() ([]byte, error) {
+	server := I.roundRobin(serverSlice)
 	resp, err := http.Get(server)
 	if err != nil {
 		return []byte{}, err
