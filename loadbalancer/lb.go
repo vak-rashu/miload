@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	http "net/http"
+	"net/url"
 )
 
 // what miload is?
@@ -20,6 +21,12 @@ type msg struct {
 	M string `json:"msg"`
 }
 
+type request struct {
+	body   string
+	method string
+	url    *url.URL
+}
+
 func main() {
 	http.HandleFunc("/", callBackendHandler)
 	log.Fatal(http.ListenAndServe(":80", nil))
@@ -27,20 +34,17 @@ func main() {
 
 func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 	sendMsg := msg{}
-	if r.Method == "GET" {
-		backendMsg, err := callBackend()
-		if err != nil {
-			http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
-		}
-		sendMsg.M = string(backendMsg)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(sendMsg.M)
-	} else {
-		http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
+	backendMsg, err := callBackend()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusExpectationFailed)
 	}
+	sendMsg.M = string(backendMsg)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sendMsg.M)
 }
 
 func callBackend() ([]byte, error) {
+
 	resp, err := http.Get("http://localhost:8010/msg")
 	if err != nil {
 		return []byte{}, err
@@ -49,4 +53,5 @@ func callBackend() ([]byte, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	return body, nil
+
 }
