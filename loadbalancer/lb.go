@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	http "net/http"
-	"net/url"
 )
 
 // what miload is?
@@ -21,10 +20,26 @@ type msg struct {
 	M string `json:"msg"`
 }
 
-type request struct {
-	body   string
-	method string
-	url    *url.URL
+type pointer struct {
+	i int
+}
+
+var serverSlice []string = []string{
+	"http://localhost:8010/1",
+	"http://localhost:8011/2",
+	"http://localhost:8012/3",
+}
+
+func (I *pointer) roundRobin([]string) string {
+	if I.i == 0 {
+		return serverSlice[I.i]
+	}
+	if I.i == len(serverSlice)-1 {
+		I.i = 0
+	}
+	I.i += 1
+
+	return serverSlice[I.i]
 }
 
 func main() {
@@ -32,9 +47,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
+var v = pointer{i: 0}
+
 func callBackendHandler(w http.ResponseWriter, r *http.Request) {
+	server := v.roundRobin(serverSlice)
+
 	sendMsg := msg{}
-	backendMsg, err := callBackend()
+	backendMsg, err := callBackend(server)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusExpectationFailed)
 	}
@@ -43,9 +62,8 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sendMsg.M)
 }
 
-func callBackend() ([]byte, error) {
-
-	resp, err := http.Get("http://localhost:8010/msg")
+func callBackend(server string) ([]byte, error) {
+	resp, err := http.Get(server)
 	if err != nil {
 		return []byte{}, err
 	}
