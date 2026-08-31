@@ -12,14 +12,14 @@ type msg struct {
 }
 
 func main() {
-	http.HandleFunc("/msg", GetMsgHandler)
-	log.Fatal(http.ListenAndServe(":8010", nil))
+	http.HandleFunc("/3", GetMsgHandler)
+	log.Fatal(http.ListenAndServe(":8012", nil))
 }
 
 func GetMsgHandler(w http.ResponseWriter, r *http.Request) {
 	sendMsg := msg{}
 	if r.Method == "GET" {
-		sendMsg.M = "Hello from Backend"
+		sendMsg.M = "Hello from Backend 3"
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(sendMsg)
