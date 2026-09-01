@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	http "net/http"
+	"time"
 )
 
 // what miload is?
@@ -44,6 +45,8 @@ func (I *pointer) roundRobin([]string) string {
 }
 
 func main() {
+	go checkHeartBeat()
+
 	http.HandleFunc("/", callBackendHandler)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
@@ -74,4 +77,11 @@ func callBackend() ([]byte, error) {
 	body, err := io.ReadAll(resp.Body)
 	return body, nil
 
+}
+
+func checkHeartBeat() {
+	s := time.Duration(2 * time.Second)
+	for s {
+
+	}
 }

@@ -11,8 +11,13 @@ type msg struct {
 	M string `json:"msg"`
 }
 
+type heathCheck struct {
+	Beat string `json:"beat"`
+}
+
 func main() {
 	http.HandleFunc("/3", GetMsgHandler)
+	http.HandleFunc("/heart-beat", GetHeartBeat)
 	log.Fatal(http.ListenAndServe(":8012", nil))
 }
 
@@ -26,4 +31,12 @@ func GetMsgHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
 	}
+}
+
+func GetHeartBeat(w http.ResponseWriter, r *http.Request) {
+	beat := heathCheck{}
+	beat.Beat = "HI"
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(beat)
 }
