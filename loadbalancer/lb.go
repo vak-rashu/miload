@@ -118,6 +118,9 @@ func checkHeartBeat() {
 		if err != nil {
 			stoppedServer = serverMap[url]
 			i := slices.Index(serverSlice, stoppedServer)
+			if i == 0 {
+				serverSlice = append(serverSlice, serverSlice[1:]...)
+			}
 			serverSlice = slices.Concat(serverSlice[:i], serverSlice[i:])
 		}
 
