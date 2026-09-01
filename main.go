@@ -1,19 +1,27 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
-func rr(list []int) {
-	i := 0
-	for {
-		val := list[i]
-		fmt.Println(val)
-		i += 1
-		if i == len(list) {
-			i = 0
-		}
-	}
-}
+var intT []int = []int{1, 2, 3}
+
+// func rr(list []int) {
+// 	i := 0
+// 	for {
+// 		val := list[i]
+// 		fmt.Println(val)
+// 		i += 1
+// 		if i == len(list) {
+// 			i = 0
+// 		}
+// 	}
+// }
 
 func main() {
-	rr([]int{1, 2, 3})
+	i := 0
+	intT = slices.Concat(intT[:i], intT[i:])
+	fmt.Println(intT)
+	// rr([]int{1, 2, 3})
 }

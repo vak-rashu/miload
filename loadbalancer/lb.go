@@ -6,6 +6,7 @@ import (
 	"log"
 	http "net/http"
 	"slices"
+	"time"
 )
 
 // what miload is?
@@ -110,9 +111,10 @@ func checkHealth(serverURL string) ([]byte, error) {
 var stoppedServer string
 
 func checkHeartBeat() {
-	// s := time.Duration(2 * time.Second)
+	s := time.Duration(2 * time.Second)
 	for url := range serverMap {
 		_, err := checkHealth(url)
+
 		if err != nil {
 			stoppedServer = serverMap[url]
 			i := slices.Index(serverSlice, stoppedServer)
@@ -123,4 +125,6 @@ func checkHeartBeat() {
 			serverSlice = append(serverSlice, stoppedServer)
 		}
 	}
+
+	time.Sleep(s)
 }
