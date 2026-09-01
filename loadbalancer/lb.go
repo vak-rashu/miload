@@ -26,18 +26,19 @@ type pointer struct {
 
 var serverSlice []string = []string{
 	"http://localhost:8010/1",
+	"http://localhost:8010/1",
 	"http://localhost:8011/2",
 	"http://localhost:8012/3",
 }
 
+// a round robin algo takes the input: a slice
 func (I *pointer) roundRobin([]string) string {
 	if I.i == 0 {
 		return serverSlice[I.i]
 	}
-	if I.i == len(serverSlice)-1 {
+	if I.i == len(serverSlice) {
 		I.i = 0
 	}
-	I.i += 1
 
 	return serverSlice[I.i]
 }
@@ -63,6 +64,7 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 
 func callBackend() ([]byte, error) {
 	server := I.roundRobin(serverSlice)
+	I.i += 1
 	resp, err := http.Get(server)
 	if err != nil {
 		return []byte{}, err
