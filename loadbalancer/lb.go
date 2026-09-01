@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 	http "net/http"
-	"time"
+	"slices"
 )
 
 // what miload is?
@@ -25,11 +25,28 @@ type pointer struct {
 	i int
 }
 
+// list of backend server
+const backend1 string = "http://localhost:8010/1"
+const backend2 string = "http://localhost:8011/2"
+const backend3 string = "http://localhost:8012/3"
+
+// list of backend server health check points
+const checkHealth1 string = "http://localhost:8010/heart-beat"
+const checkHealth2 string = "http://localhost:8011/heart-beat"
+const checkHealth3 string = "http://localhost:8012/heart-beat"
+
+// round robin slice
 var serverSlice []string = []string{
-	"http://localhost:8010/1",
-	"http://localhost:8010/1",
-	"http://localhost:8011/2",
-	"http://localhost:8012/3",
+	backend1,
+	backend2,
+	backend3,
+}
+
+// map to check health of backend servers
+var serverMap map[string]string = map[string]string{
+	checkHealth1: backend1,
+	checkHealth2: backend2,
+	checkHealth3: backend3,
 }
 
 // a round robin algo takes the input: a slice
@@ -66,9 +83,9 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func callBackend() ([]byte, error) {
-	server := I.roundRobin(serverSlice)
+	serverURL := I.roundRobin(serverSlice)
 	I.i += 1
-	resp, err := http.Get(server)
+	resp, err := http.Get(serverURL)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -79,9 +96,31 @@ func callBackend() ([]byte, error) {
 
 }
 
-func checkHeartBeat() {
-	s := time.Duration(2 * time.Second)
-	for s {
+func checkHealth(serverURL string) ([]byte, error) {
+	resp, err := http.Get(serverURL)
+	if err != nil {
+		return []byte{}, err
+	}
 
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	return body, nil
+}
+
+var stoppedServer string
+
+func checkHeartBeat() {
+	// s := time.Duration(2 * time.Second)
+	for url := range serverMap {
+		_, err := checkHealth(url)
+		if err != nil {
+			stoppedServer = serverMap[url]
+			i := slices.Index(serverSlice, stoppedServer)
+			serverSlice = slices.Concat(serverSlice[:i], serverSlice[i:])
+		}
+
+		if hasServer := slices.Contains(serverSlice, stoppedServer); hasServer == false {
+			serverSlice = append(serverSlice, stoppedServer)
+		}
 	}
 }
