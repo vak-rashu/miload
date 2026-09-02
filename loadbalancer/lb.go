@@ -50,15 +50,10 @@ var serverSlice []string = []string{
 
 // a round robin algo takes the input: a slice
 func (I *pointer) roundRobin([]string) string {
-	currInd := I.i //0
-	I.i += 1       //1
+	currInd := I.i
+	I.i = (I.i + 1) % len(serverSlice)
 
-	if currInd == len(serverSlice) {
-		currInd = 0
-		I.i = 0
-	} // 0, 0
-
-	return serverSlice[currInd] //1
+	return serverSlice[currInd]
 }
 
 func main() {
