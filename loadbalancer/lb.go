@@ -51,6 +51,8 @@ var serverSlice []string = []string{
 // a round robin algo takes the input: a slice
 func (I *pointer) roundRobin([]string) string {
 	currInd := I.i
+	// use modulus to loop again and again
+	// for the same range of i values
 	I.i = (I.i + 1) % len(serverSlice)
 
 	return serverSlice[currInd]
