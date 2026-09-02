@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	http "net/http"
+	"slices"
 )
 
 // what miload is?
@@ -22,6 +23,7 @@ type msg struct {
 
 type pointer struct {
 	i int
+	s []string
 }
 
 // list of backend server
@@ -30,9 +32,9 @@ const backend2 string = "http://localhost:8011/2"
 const backend3 string = "http://localhost:8012/3"
 
 // list of backend server health check points
-// const checkHealth1 string = "http://localhost:8010/heart-beat"
-// const checkHealth2 string = "http://localhost:8011/heart-beat"
-// const checkHealth3 string = "http://localhost:8012/heart-beat"
+const checkHealth1 string = "http://localhost:8010/heart-beat1"
+const checkHealth2 string = "http://localhost:8011/heart-beat2"
+const checkHealth3 string = "http://localhost:8012/heart-beat3"
 
 // round robin slice
 var serverSlice []string = []string{
@@ -42,24 +44,25 @@ var serverSlice []string = []string{
 }
 
 // map to check health of backend servers
-// var serverMap map[string]string = map[string]string{
-// 	checkHealth1: backend1,
-// 	checkHealth2: backend2,
-// 	checkHealth3: backend3,
-// }
+var serverMap map[string]string = map[string]string{
+	checkHealth1: backend1,
+	checkHealth2: backend2,
+	checkHealth3: backend3,
+}
 
 // a round robin algo takes the input: a slice
-func (I *pointer) roundRobin([]string) string {
+func (I *pointer) roundRobin() string {
 	currInd := I.i
 	// use modulus to loop again and again
 	// for the same range of i values
-	I.i = (I.i + 1) % len(serverSlice)
+	I.i = (I.i + 1) % len(I.s)
 
-	return serverSlice[currInd]
+	return I.s[currInd]
 }
 
 func main() {
-	// go checkHeartBeat()
+
+	go checkHeartBeat()
 
 	http.HandleFunc("/", callBackendHandler)
 	log.Fatal(http.ListenAndServe(":80", nil))
@@ -77,10 +80,10 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sendMsg.M)
 }
 
-var I = &pointer{i: 0}
+var I = &pointer{i: 0, s: serverSlice}
 
 func callBackend() ([]byte, error) {
-	serverURL := I.roundRobin(serverSlice)
+	serverURL := I.roundRobin()
 	resp, err := http.Get(serverURL)
 	if err != nil {
 		return []byte{}, err
@@ -92,37 +95,37 @@ func callBackend() ([]byte, error) {
 
 }
 
-// func checkHealth(serverURL string) ([]byte, error) {
-// 	resp, err := http.Get(serverURL)
-// 	if err != nil {
-// 		return []byte{}, err
-// 	}
+func checkHealth(serverURL string) ([]byte, error) {
+	resp, err := http.Get(serverURL)
+	if err != nil {
+		return []byte{}, err
+	}
 
-// 	defer resp.Body.Close()
-// 	body, err := io.ReadAll(resp.Body)
-// 	return body, nil
-// }
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	return body, nil
+}
 
-// var stoppedServer string
+var stoppedServer string
 
-// func checkHeartBeat() {
-// 	s := time.Duration(2 * time.Second)
-// 	for url := range serverMap {
-// 		_, err := checkHealth(url)
+func checkHeartBeat() {
+	// s := time.Duration(2 * time.Second)
+	for {
+		for url := range serverMap {
+			_, err := checkHealth(url)
 
-// 		if err != nil {
-// 			stoppedServer = serverMap[url]
-// 			i := slices.Index(serverSlice, stoppedServer)
-// 			if i == 0 {
-// 				serverSlice = append(serverSlice, serverSlice[1:]...)
-// 			}
-// 			serverSlice = slices.Concat(serverSlice[:i], serverSlice[i:])
-// 		}
+			if err != nil {
+				stoppedServer = serverMap[url]
+				i := slices.Index(I.s, stoppedServer)
+				if i == 0 {
+					I.s = append(I.s, I.s[1:]...)
+				}
+				I.s = slices.Concat(I.s[:i], I.s[i+1:])
+			}
 
-// 		if hasServer := slices.Contains(serverSlice, stoppedServer); hasServer == false {
-// 			serverSlice = append(serverSlice, stoppedServer)
-// 		}
-// 	}
-
-// 	time.Sleep(s)
-// }
+			if hasServer := slices.Contains(I.s, stoppedServer); hasServer == false {
+				I.s = append(I.s, stoppedServer)
+			}
+		}
+	}
+}
