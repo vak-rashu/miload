@@ -34,9 +34,13 @@ func GetMsgHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetHeartBeat(w http.ResponseWriter, r *http.Request) {
-	beat := heathCheck{}
-	beat.Beat = "HI"
+	if r.Method == "GET" {
+		beat := heathCheck{}
+		beat.Beat = "HI"
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(beat)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(beat.Beat)
+	} else {
+		http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
+	}
 }
