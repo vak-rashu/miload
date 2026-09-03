@@ -16,7 +16,7 @@ type heathCheck struct {
 }
 
 func main() {
-	http.HandleFunc("/", GetMsgHandler)
+	http.HandleFunc("/1", GetMsgHandler)
 	http.HandleFunc("/heart-beat1", GetHeartBeat)
 	log.Fatal(http.ListenAndServe(":8010", nil))
 }

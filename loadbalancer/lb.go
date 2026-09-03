@@ -65,19 +65,24 @@ func main() {
 	go checkHeartBeat()
 
 	http.HandleFunc("/", callBackendHandler)
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
 func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 
-	sendMsg := msg{}
-	backendMsg, err := callBackend()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusExpectationFailed)
+	if r.Method == "GET" {
+		sendMsg := msg{}
+		backendMsg, err := callBackend()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusExpectationFailed)
+		}
+		sendMsg.M = string(backendMsg)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(sendMsg.M)
+	} else {
+		http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
 	}
-	sendMsg.M = string(backendMsg)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sendMsg.M)
+
 }
 
 var I = &pointer{i: 0, s: serverSlice}
@@ -103,29 +108,34 @@ func checkHealth(serverURL string) ([]byte, error) {
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	return body, nil
+	if string(body) == "HI" {
+		return body, nil
+	}
+	return []byte{}, err
 }
 
 var stoppedServer string
 
 func checkHeartBeat() {
 	// s := time.Duration(2 * time.Second)
+
 	for {
 		for url := range serverMap {
 			_, err := checkHealth(url)
-
 			if err != nil {
 				stoppedServer = serverMap[url]
-				i := slices.Index(I.s, stoppedServer)
-				if i == 0 {
-					I.s = append(I.s, I.s[1:]...)
+				ind := slices.Index(I.s, stoppedServer)
+				if ind == 0 {
+					I.s = I.s[1:]
 				}
-				I.s = slices.Concat(I.s[:i], I.s[i+1:])
+				I.s = slices.Concat(I.s[:ind], I.s[ind+1:])
 			}
 
-			if hasServer := slices.Contains(I.s, stoppedServer); hasServer == false {
+			if hasServer := slices.Contains(I.s, stoppedServer); hasServer != true {
 				I.s = append(I.s, stoppedServer)
 			}
 		}
+
+		// time.Sleep(s)
 	}
 }
