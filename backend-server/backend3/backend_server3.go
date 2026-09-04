@@ -27,7 +27,7 @@ func GetMsgHandler(w http.ResponseWriter, r *http.Request) {
 		sendMsg.M = "Hello from Backend 3"
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(sendMsg)
+		json.NewEncoder(w).Encode(sendMsg.M)
 	} else {
 		http.Error(w, "This method is prohibited", http.StatusMethodNotAllowed)
 	}

@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	http "net/http"
-	"slices"
 )
 
 // what miload is?
@@ -62,7 +61,7 @@ func (I *pointer) roundRobin() string {
 
 func main() {
 
-	go checkHeartBeat()
+	// go checkHeartBeat()
 
 	http.HandleFunc("/", callBackendHandler)
 	log.Fatal(http.ListenAndServe(":8000", nil))
@@ -98,44 +97,4 @@ func callBackend() ([]byte, error) {
 	body, err := io.ReadAll(resp.Body)
 	return body, nil
 
-}
-
-func checkHealth(serverURL string) ([]byte, error) {
-	resp, err := http.Get(serverURL)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if string(body) == "HI" {
-		return body, nil
-	}
-	return []byte{}, err
-}
-
-var stoppedServer string
-
-func checkHeartBeat() {
-	// s := time.Duration(2 * time.Second)
-
-	for {
-		for url := range serverMap {
-			_, err := checkHealth(url)
-			if err != nil {
-				stoppedServer = serverMap[url]
-				ind := slices.Index(I.s, stoppedServer)
-				if ind == 0 {
-					I.s = I.s[1:]
-				}
-				I.s = slices.Concat(I.s[:ind], I.s[ind+1:])
-			}
-
-			if hasServer := slices.Contains(I.s, stoppedServer); hasServer != true {
-				I.s = append(I.s, stoppedServer)
-			}
-		}
-
-		// time.Sleep(s)
-	}
 }
