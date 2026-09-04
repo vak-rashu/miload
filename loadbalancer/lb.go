@@ -2,9 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	http "net/http"
+	"slices"
+	"time"
 )
 
 // what miload is?
@@ -44,9 +47,9 @@ var serverSlice []string = []string{
 
 // map to check health of backend servers
 var serverMap map[string]string = map[string]string{
-	checkHealth1: backend1,
-	checkHealth2: backend2,
-	checkHealth3: backend3,
+	backend1: checkHealth1,
+	backend2: checkHealth2,
+	backend3: checkHealth3,
 }
 
 // a round robin algo takes the input: a slice
@@ -59,9 +62,11 @@ func (I *pointer) roundRobin() string {
 	return I.s[currInd]
 }
 
+var I = &pointer{i: 0, s: serverSlice}
+
 func main() {
 
-	// go checkHeartBeat()
+	go callHeartBeat()
 
 	http.HandleFunc("/", callBackendHandler)
 	log.Fatal(http.ListenAndServe(":8000", nil))
@@ -84,8 +89,6 @@ func callBackendHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-var I = &pointer{i: 0, s: serverSlice}
-
 func callBackend() ([]byte, error) {
 	serverURL := I.roundRobin()
 	resp, err := http.Get(serverURL)
@@ -97,4 +100,39 @@ func callBackend() ([]byte, error) {
 	body, err := io.ReadAll(resp.Body)
 	return body, nil
 
+}
+
+// may be the response needs to be mapped out to a json
+func checkHeartBeat(server string) ([]byte, error) {
+	resp, err := http.Get(server)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error making response:%v", err)
+	}
+
+	defer resp.Body.Close()
+	r, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error reading response:%v", err)
+	}
+	return r, nil
+}
+
+func callHeartBeat() {
+	for {
+		time.Sleep(time.Duration(time.Second * 2))
+		for serverURL, healthURL := range serverMap {
+			_, err := checkHeartBeat(healthURL)
+			if err != nil {
+				ind := slices.Index(I.s, serverURL)
+				if ind == -1 {
+					continue
+				}
+				I.s = append(I.s[:ind], I.s[ind+1:]...)
+			} else {
+				if hasActive := slices.Contains(I.s, serverURL); hasActive != true {
+					I.s = append(I.s, serverURL)
+				}
+			}
+		}
+	}
 }
