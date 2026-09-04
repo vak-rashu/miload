@@ -69,7 +69,7 @@ func main() {
 	go callHeartBeat()
 
 	http.HandleFunc("/", callBackendHandler)
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
 func callBackendHandler(w http.ResponseWriter, r *http.Request) {
