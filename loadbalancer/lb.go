@@ -53,6 +53,17 @@ var serverMap map[string]string = map[string]string{
 }
 
 // a round robin algo takes the input: a slice
+// func (I *pointer) roundRobin(c chan string) {
+// 	currInd := I.i
+// 	// use modulus to loop again and again
+// 	// for the same range of i values
+// 	I.i = (I.i + 1) % len(I.s)
+// 	serverURL := I.s[currInd]
+// 	c <- serverURL
+
+// 	// return I.s[currInd]
+// }
+
 func (I *pointer) roundRobin() string {
 	currInd := I.i
 	// use modulus to loop again and again
