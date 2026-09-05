@@ -128,22 +128,34 @@ func checkHeartBeat(server string) ([]byte, error) {
 	return r, nil
 }
 
+var cTime = make(chan time.Duration)
+
+func getTickerTime() {
+	cTime <- time.Duration(time.Second * 2)
+}
+
 func callHeartBeat() {
 	for {
-		time.Sleep(time.Duration(time.Second * 2))
-		for serverURL, healthURL := range serverMap {
-			_, err := checkHeartBeat(healthURL)
-			if err != nil {
-				ind := slices.Index(I.s, serverURL)
-				if ind == -1 {
-					continue
-				}
-				I.s = append(I.s[:ind], I.s[ind+1:]...)
-			} else {
-				if hasActive := slices.Contains(I.s, serverURL); hasActive != true {
-					I.s = append(I.s, serverURL)
+		// time.Sleep(time.Duration(time.Second * 2))
+		getTickerTime()
+		select {
+		case <-cTime:
+			for serverURL, healthURL := range serverMap {
+				_, err := checkHeartBeat(healthURL)
+				if err != nil {
+					ind := slices.Index(I.s, serverURL)
+					if ind == -1 {
+						continue
+					}
+					I.s = append(I.s[:ind], I.s[ind+1:]...)
+				} else {
+					if hasActive := slices.Contains(I.s, serverURL); hasActive != true {
+						I.s = append(I.s, serverURL)
+					}
 				}
 			}
 		}
+		// time.NewTicker(time.Duration(time.Second * 2))
+
 	}
 }
